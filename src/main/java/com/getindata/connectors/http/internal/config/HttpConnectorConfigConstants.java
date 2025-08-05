@@ -100,6 +100,18 @@ public final class HttpConnectorConfigConstants {
     public static final String SOURCE_PROXY_PASSWORD =
             SOURCE_LOOKUP_PREFIX + "proxy.password";
 
+    public static final String SINK_PROXY_HOST =
+            GID_CONNECTOR_HTTP + "sink.proxy.host";
+
+    public static final String SINK_PROXY_PORT =
+            GID_CONNECTOR_HTTP + "sink.proxy.port";
+
+    public static final String SINK_PROXY_USERNAME =
+            GID_CONNECTOR_HTTP + "sink.proxy.username";
+
+    public static final String SINK_PROXY_PASSWORD =
+            GID_CONNECTOR_HTTP + "sink.proxy.password";
+
     public static final String SINK_HTTP_TIMEOUT_SECONDS =
         GID_CONNECTOR_HTTP + "sink.request.timeout";
 

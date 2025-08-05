@@ -95,7 +95,7 @@ class JavaNetHttpClientFactoryTest {
     }
 
     @Test
-    public void shouldGetClientWithExecutor() {
+    public void shouldGetClientWithoutProxyFromProperties() {
         Properties properties = new Properties();
         ExecutorService httpClientExecutor =
                 Executors.newFixedThreadPool(
@@ -107,6 +107,63 @@ class JavaNetHttpClientFactoryTest {
 
         HttpClient client = JavaNetHttpClientFactory.createClient(properties, httpClientExecutor);
         assertThat(client.followRedirects().equals(HttpClient.Redirect.NORMAL)).isTrue();
+        assertThat(client.authenticator().isEmpty()).isTrue();
+        assertThat(client.proxy().isEmpty()).isTrue();
+    }
+
+    @Test
+    public void shouldGetClientWithAuthenticatorFromProperties() throws UnknownHostException {
+        Properties properties = new Properties();
+        properties.setProperty(SINK_PROXY_HOST, "google");
+        properties.setProperty(SINK_PROXY_PORT, "8080");
+        properties.setProperty(SINK_PROXY_USERNAME, "username");
+        properties.setProperty(SINK_PROXY_PASSWORD, "password");
+
+        ExecutorService httpClientExecutor =
+                Executors.newFixedThreadPool(
+                        1,
+                        new ExecutorThreadFactory(
+                                "http-sink-client-batch-request-worker",
+                                ThreadUtils.LOGGING_EXCEPTION_HANDLER)
+                );
+
+        HttpClient client = JavaNetHttpClientFactory.createClient(properties, httpClientExecutor);
+
+        assertThat(client.authenticator().isPresent()).isTrue();
+        assertThat(client.proxy().isPresent()).isTrue();
+
+        PasswordAuthentication auth = client.authenticator().get().requestPasswordAuthenticationInstance(
+                "google",                      // host
+                InetAddress.getByName("127.0.0.1"), // address
+                8080,                                 // port
+                "http",                             // protocol
+                "Please authenticate",              // prompt
+                "basic",                            // scheme
+                null,                               // URL
+                Authenticator.RequestorType.PROXY  // Requestor type
+        );
+
+        assertThat(auth.getUserName().equals("username")).isTrue();
+        assertThat(Arrays.equals(auth.getPassword(), "password".toCharArray())).isTrue();
+    }
+
+    @Test
+    public void shouldGetClientWithoutAuthenticatorFromProperties() {
+        Properties properties = new Properties();
+        properties.setProperty(SINK_PROXY_HOST, "google");
+        properties.setProperty(SINK_PROXY_PORT, "8080");
+
+        ExecutorService httpClientExecutor =
+                Executors.newFixedThreadPool(
+                        1,
+                        new ExecutorThreadFactory(
+                                "http-sink-client-batch-request-worker",
+                                ThreadUtils.LOGGING_EXCEPTION_HANDLER)
+                );
+
+        HttpClient client = JavaNetHttpClientFactory.createClient(properties, httpClientExecutor);
+        assertThat(client.authenticator().isEmpty()).isTrue();
+        assertThat(client.proxy().isPresent()).isTrue();
     }
 
 }

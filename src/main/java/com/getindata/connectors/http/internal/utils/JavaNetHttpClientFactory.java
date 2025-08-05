@@ -80,12 +80,34 @@ public class JavaNetHttpClientFactory {
     public static HttpClient createClient(Properties properties, Executor executor) {
 
         SSLContext sslContext = getSslContext(properties);
-
-        return HttpClient.newBuilder()
+        var clientBuilder = HttpClient.newBuilder()
             .followRedirects(Redirect.NORMAL)
             .sslContext(sslContext)
-            .executor(executor)
-            .build();
+            .executor(executor);
+
+        String proxyHost = properties.getProperty(HttpConnectorConfigConstants.SINK_PROXY_HOST);
+        String proxyPort = properties.getProperty(HttpConnectorConfigConstants.SINK_PROXY_PORT);
+
+        if (!StringUtils.isNullOrWhitespaceOnly(proxyHost)
+                && !StringUtils.isNullOrWhitespaceOnly(proxyPort)) {
+            try {
+                int port = Integer.parseInt(proxyPort);
+
+                Optional<String> proxyUsername = Optional.ofNullable(
+                        properties.getProperty(HttpConnectorConfigConstants.SINK_PROXY_USERNAME));
+                Optional<String> proxyPassword = Optional.ofNullable(
+                        properties.getProperty(HttpConnectorConfigConstants.SINK_PROXY_PASSWORD));
+
+                ProxyConfig proxyConfig = new ProxyConfig(proxyHost, port, proxyUsername, proxyPassword);
+                clientBuilder.proxy(
+                        ProxySelector.of(new InetSocketAddress(proxyConfig.getHost(), proxyConfig.getPort())));
+                proxyConfig.getAuthenticator().ifPresent(clientBuilder::authenticator);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid proxy port for http sink: {}", proxyPort, e);
+            }
+        }
+
+        return clientBuilder.build();
     }
 
     /**
