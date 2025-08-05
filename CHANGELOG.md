@@ -3,8 +3,9 @@
 ## [Unreleased]
 
 -   Added option to define a proxy for the lookup source (including authentication)
+-   Added option to define a proxy for the sink (including authentication)
 
--   Added support for generic json and URL query creator 
+-   Added support for generic json and URL query creator
 
 -   Retries support for source table:
     -   Auto retry on IOException and user-defined http codes - parameter `gid.connector.http.source.lookup.retry-codes`.
